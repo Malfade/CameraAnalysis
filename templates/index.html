@@ -1,0 +1,187 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard - Система подсчета людей{% endblock %}
+
+{% block body_class %}security-page{% endblock %}
+
+{% block content %}
+<div class="security-monitor">
+    <!-- Навигация -->
+    <div class="monitor-nav">
+        <a href="/" class="nav-link active">
+            <span class="nav-icon">📊</span>
+            <span class="nav-text">DASHBOARD</span>
+        </a>
+        <a href="/video" class="nav-link">
+            <span class="nav-icon">📹</span>
+            <span class="nav-text">VIDEO</span>
+        </a>
+        <a href="/statistics" class="nav-link">
+            <span class="nav-icon">📈</span>
+            <span class="nav-text">STATISTICS</span>
+        </a>
+        <a href="/map" class="nav-link">
+            <span class="nav-icon">🗺️</span>
+            <span class="nav-text">MAP</span>
+        </a>
+    </div>
+
+    <!-- Заголовок системы -->
+    <div class="monitor-header">
+        <div class="header-left">
+            <div class="monitor-title">SYSTEM DASHBOARD</div>
+            <div class="monitor-subtitle">FACILITY MONITORING</div>
+        </div>
+        <div class="header-right">
+            <div class="monitor-time" id="monitor-time"></div>
+            <div class="monitor-date" id="monitor-date"></div>
+        </div>
+    </div>
+
+    <!-- Статус системы -->
+    <div class="system-status">
+        <div class="status-item">
+            <span class="status-label">ROOMS:</span>
+            <span class="status-value" id="total-rooms">-</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">SUBJECTS:</span>
+            <span class="status-value" id="total-people">-</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">ACTIVE VISITS:</span>
+            <span class="status-value" id="active-visits">-</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">LAST UPDATE:</span>
+            <span class="status-value" id="last-update">--:--:--</span>
+        </div>
+    </div>
+
+    <!-- Статус комнат -->
+    <div class="security-section">
+        <div class="section-header">
+            <span class="section-title">ROOM STATUS</span>
+            <span class="section-indicator">●</span>
+        </div>
+        <div id="rooms-status" class="rooms-grid">
+            <div class="text-center security-loading">LOADING...</div>
+        </div>
+    </div>
+
+    <!-- Активные посещения -->
+    <div class="security-section">
+        <div class="section-header">
+            <span class="section-title">ACTIVE VISITS</span>
+            <span class="section-indicator">●</span>
+        </div>
+        <div id="active-visits-list" class="visits-list">
+            <div class="text-center security-loading">LOADING...</div>
+        </div>
+    </div>
+
+    <!-- Групповые перемещения -->
+    <div class="security-section">
+        <div class="section-header">
+            <span class="section-title">GROUP MOVEMENTS</span>
+            <span class="section-indicator">●</span>
+        </div>
+        <div class="security-table-container">
+            <table class="security-table">
+                <thead>
+                    <tr>
+                        <th>TIME</th>
+                        <th>GROUP</th>
+                        <th>MEMBERS</th>
+                        <th>FROM</th>
+                        <th>TO</th>
+                    </tr>
+                </thead>
+                <tbody id="group-movements-table">
+                    <tr>
+                        <td colspan="5" class="text-center security-loading">LOADING...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- История перемещений -->
+    <div class="security-section">
+        <div class="section-header">
+            <span class="section-title">MOVEMENT HISTORY</span>
+            <span class="section-indicator">●</span>
+            <a href="/api/export/movements" class="export-btn">📥 EXPORT CSV</a>
+        </div>
+        <div class="security-table-container">
+            <table class="security-table">
+                <thead>
+                    <tr>
+                        <th>TIME</th>
+                        <th>SUBJECT</th>
+                        <th>FROM</th>
+                        <th>TO</th>
+                    </tr>
+                </thead>
+                <tbody id="movements-table">
+                    <tr>
+                        <td colspan="4" class="text-center security-loading">LOADING...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+// Обновление времени
+function updateTime() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('ru-RU', {hour12: false});
+    const dateStr = now.toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }).replace(/\//g, '.');
+
+    document.getElementById('monitor-time').textContent = timeStr;
+    document.getElementById('monitor-date').textContent = dateStr;
+    document.getElementById('last-update').textContent = timeStr;
+}
+
+// Обновление данных
+updateTime();
+setInterval(updateTime, 1000);
+
+updateRoomsStatus();
+updateMovements();
+updateActiveVisits();
+updateStatistics();
+updateGroupMovements();
+
+// WebSocket подключение
+const socket = io();
+socket.on('connect', function() {
+    console.log('WebSocket подключен');
+});
+socket.on('room_update', function(data) {
+    updateRoomsStatus();
+    updateActiveVisits();
+});
+socket.on('events', function(events) {
+    updateMovements();
+    updateGroupMovements();
+});
+
+// Fallback на AJAX
+setInterval(updateRoomsStatus, 2000);
+setInterval(updateMovements, 2000);
+setInterval(updateActiveVisits, 2000);
+setInterval(updateStatistics, 5000);
+setInterval(updateGroupMovements, 2000);
+</script>
+{% endblock %}

@@ -1,0 +1,539 @@
+{% extends "layout.html" %}
+
+{% block title %}Карта помещений - Система подсчета людей{% endblock %}
+
+{% block body_class %}security-page{% endblock %}
+
+{% block content %}
+<div class="security-monitor">
+    <!-- Навигация -->
+    <div class="monitor-nav">
+        <a href="/" class="nav-link">
+            <span class="nav-icon">📊</span>
+            <span class="nav-text">DASHBOARD</span>
+        </a>
+        <a href="/video" class="nav-link">
+            <span class="nav-icon">📹</span>
+            <span class="nav-text">VIDEO</span>
+        </a>
+        <a href="/statistics" class="nav-link">
+            <span class="nav-icon">📈</span>
+            <span class="nav-text">STATISTICS</span>
+        </a>
+        <a href="/map" class="nav-link active">
+            <span class="nav-icon">🗺️</span>
+            <span class="nav-text">MAP</span>
+        </a>
+    </div>
+
+    <!-- Заголовок системы -->
+    <div class="monitor-header">
+        <div class="header-left">
+            <div class="monitor-title">FACILITY MAP</div>
+            <div class="monitor-subtitle">REAL-TIME TRACKING</div>
+        </div>
+        <div class="header-right">
+            <div class="monitor-time" id="monitor-time"></div>
+            <div class="monitor-date" id="monitor-date"></div>
+        </div>
+    </div>
+
+    <!-- Управление картой -->
+    <div class="security-section">
+        <div class="section-header">
+            <span class="section-title">MAP CONTROLS</span>
+        </div>
+        <div class="map-controls">
+            <div class="control-group">
+                <label for="room-select-map" class="control-label">ROOM:</label>
+                <select id="room-select-map" class="security-select" onchange="switchRoom()">
+                    <option value="all">ALL ROOMS</option>
+                </select>
+            </div>
+            <button type="button" class="security-btn" onclick="toggleTrajectories()">TOGGLE TRAJECTORIES</button>
+            <button type="button" class="security-btn" onclick="clearTrajectories()">CLEAR TRAJECTORIES</button>
+            <button type="button" class="security-btn" onclick="resetZoom()">RESET ZOOM</button>
+            <label class="control-label">
+                <input type="checkbox" id="show-distances" checked> SHOW DISTANCES
+            </label>
+        </div>
+    </div>
+
+    <!-- Карта -->
+    <div class="security-section">
+        <div class="section-header">
+            <span class="section-title">FACILITY LAYOUT</span>
+            <span class="section-indicator">●</span>
+        </div>
+        <div class="map-container">
+            <canvas id="room-map" class="security-canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Легенда и информация -->
+    <div class="security-section">
+        <div class="section-header">
+            <span class="section-title">LEGEND &amp; INFO</span>
+        </div>
+        <div class="map-info-grid">
+            <div class="legend-container" id="map-legend">
+                <div class="text-center security-loading">LOADING...</div>
+            </div>
+            <div class="selected-person-info" id="selected-person">
+                <div class="info-title">SELECTED SUBJECT</div>
+                <div class="info-content" id="person-details">CLICK ON A POINT</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+let mapConfig = null;
+let roomStatus = {};
+let peoplePositions = {}; // {room: [{id, x, y, distance_m, timestamp}, ...]}
+let personTrajectories = {}; // {person_id: [{x, y, timestamp, room}, ...]}
+let showTrajectories = true;
+let showDistances = true;
+let selectedPerson = null;
+let selectedRoom = "all"; // Выбранная комната для отображения ("all" = все комнаты)
+let mapScale = 1.0;
+let mapOffsetX = 0;
+let mapOffsetY = 0;
+let isDragging = false;
+let lastMouseX = 0;
+let lastMouseY = 0;
+
+// Обновление времени
+function updateTime() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('ru-RU', {hour12: false});
+    const dateStr = now.toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }).replace(/\//g, '.');
+
+    document.getElementById('monitor-time').textContent = timeStr;
+    document.getElementById('monitor-date').textContent = dateStr;
+}
+updateTime();
+setInterval(updateTime, 1000);
+
+// WebSocket
+const socket = io();
+socket.on('connect', function() {
+    console.log('WebSocket подключен');
+    loadMapConfig();
+    updateRoomStatus();
+    updatePositions();
+});
+
+socket.on('room_update', function(data) {
+    roomStatus = data;
+    drawMap();
+});
+
+socket.on('positions_update', function(data) {
+    peoplePositions = data;
+    drawMap();
+});
+
+// Загрузка конфигурации карты
+function loadMapConfig() {
+    fetch('/api/room_map')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(config => {
+            if (config.error) {
+                console.error('Ошибка загрузки карты:', config.error);
+                document.getElementById('map-legend').innerHTML = 
+                    '<div class="text-center security-loading" style="color: #ff0000;">ERROR: ' + config.error + '</div>';
+                return;
+            }
+            mapConfig = config;
+            const canvas = document.getElementById('room-map');
+            if (!canvas) {
+                console.error('Canvas элемент не найден!');
+                return;
+            }
+            canvas.width = config.canvas_width || 800;
+            canvas.height = config.canvas_height || 600;
+            
+            // Добавляем обработчики событий для интерактивности
+            canvas.addEventListener('click', handleCanvasClick);
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('wheel', handleWheel);
+            
+            drawMap();
+            updateLegend();
+            loadTrajectories();
+        })
+        .catch(error => {
+            console.error('Ошибка при загрузке конфигурации карты:', error);
+            document.getElementById('map-legend').innerHTML = 
+                '<div class="text-center security-loading" style="color: #ff0000;">ERROR LOADING MAP CONFIG</div>';
+        });
+}
+
+// Загрузка статуса комнат
+function updateRoomStatus() {
+    fetch('/api/rooms')
+        .then(response => response.json())
+        .then(data => {
+            roomStatus = data;
+            
+            // Обновляем список комнат в селекторе
+            const select = document.getElementById('room-select-map');
+            if (select) {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="all">ALL ROOMS</option>';
+                
+                Object.keys(data).forEach(room => {
+                    const option = document.createElement('option');
+                    option.value = room;
+                    option.textContent = room;
+                    select.appendChild(option);
+                });
+                
+                // Восстанавливаем выбранное значение
+                select.value = currentValue || 'all';
+            }
+            
+            drawMap();
+        });
+}
+
+// Переключение комнаты
+function switchRoom() {
+    const select = document.getElementById('room-select-map');
+    selectedRoom = select ? select.value : 'all';
+    
+    // Автоматически масштабируем на выбранную комнату
+    if (selectedRoom !== 'all' && mapConfig) {
+        const room = mapConfig.rooms.find(r => r.name === selectedRoom);
+        if (room) {
+            // Центрируем на комнате
+            const canvas = document.getElementById('room-map');
+            mapOffsetX = (canvas.width / 2) - (room.x + room.width / 2);
+            mapOffsetY = (canvas.height / 2) - (room.y + room.height / 2);
+            mapScale = 1.5; // Увеличиваем масштаб для лучшего обзора
+        }
+    } else {
+        // Сбрасываем масштаб для всех комнат
+        resetZoom();
+    }
+    
+    drawMap();
+    updateLegend();
+}
+
+// Загрузка позиций
+function updatePositions() {
+    fetch('/api/positions')
+        .then(response => response.json())
+        .then(data => {
+            peoplePositions = data;
+            drawMap();
+        });
+}
+
+// Загрузка траекторий
+function loadTrajectories() {
+    fetch('/api/trajectories')
+        .then(response => response.json())
+        .then(data => {
+            personTrajectories = data;
+            drawMap();
+        });
+}
+
+// Отрисовка карты
+function drawMap() {
+    if (!mapConfig) return;
+    
+    const canvas = document.getElementById('room-map');
+    const ctx = canvas.getContext('2d');
+    
+    // Сохраняем состояние
+    ctx.save();
+    
+    // Применяем трансформации (масштаб и смещение)
+    ctx.translate(mapOffsetX, mapOffsetY);
+    ctx.scale(mapScale, mapScale);
+    
+    // Очищаем canvas
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(-mapOffsetX / mapScale, -mapOffsetY / mapScale, canvas.width / mapScale, canvas.height / mapScale);
+    
+    // Рисуем комнаты (только выбранную, если не "all")
+    mapConfig.rooms.forEach(room => {
+        // Пропускаем комнаты, которые не выбраны
+        if (selectedRoom !== 'all' && room.name !== selectedRoom) {
+            return;
+        }
+        
+        const roomData = roomStatus[room.name] || {count: 0, persons: []};
+        
+        // Рисуем прямоугольник комнаты
+        ctx.fillStyle = room.color || '#00ff00';
+        ctx.globalAlpha = 0.2;
+        ctx.fillRect(room.x, room.y, room.width, room.height);
+        ctx.globalAlpha = 1.0;
+        
+        // Рисуем границу (более яркую для выбранной комнаты)
+        ctx.strokeStyle = (selectedRoom === 'all' || room.name === selectedRoom) ? '#00ff00' : '#00aa00';
+        ctx.lineWidth = (selectedRoom === 'all' || room.name === selectedRoom) ? 2 : 1;
+        ctx.strokeRect(room.x, room.y, room.width, room.height);
+        
+        // Название комнаты
+        ctx.fillStyle = '#00ff00';
+        ctx.font = 'bold 16px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText(room.name, room.x + room.width / 2, room.y + 25);
+        
+        // Количество людей
+        ctx.font = 'bold 20px Courier New';
+        ctx.fillStyle = '#ffff00';
+        ctx.fillText(`${roomData.count}`, room.x + room.width / 2, room.y + 55);
+    });
+    
+    // Рисуем траектории (только для выбранной комнаты)
+    if (showTrajectories) {
+        Object.keys(personTrajectories).forEach(personId => {
+            const trajectory = personTrajectories[personId];
+            if (trajectory.length < 2) return;
+            
+            // Фильтруем траекторию по выбранной комнате
+            let filteredTrajectory = trajectory;
+            if (selectedRoom !== 'all') {
+                filteredTrajectory = trajectory.filter(p => p.room === selectedRoom);
+                if (filteredTrajectory.length < 2) return;
+            }
+            
+            ctx.strokeStyle = '#00aa00';
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.5;
+            ctx.beginPath();
+            
+            for (let i = 0; i < filteredTrajectory.length; i++) {
+                const point = filteredTrajectory[i];
+                if (i === 0) {
+                    ctx.moveTo(point.x, point.y);
+                } else {
+                    ctx.lineTo(point.x, point.y);
+                }
+            }
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+        });
+    }
+    
+    // Рисуем точки людей (только для выбранной комнаты)
+    Object.keys(peoplePositions).forEach(roomName => {
+        // Пропускаем комнаты, которые не выбраны
+        if (selectedRoom !== 'all' && roomName !== selectedRoom) {
+            return;
+        }
+        
+        const positions = peoplePositions[roomName];
+        positions.forEach(pos => {
+            // Определяем цвет точки в зависимости от времени последнего обновления
+            const timeSinceUpdate = (Date.now() / 1000) - pos.timestamp;
+            let pointColor = '#00ff00'; // Зеленый - только вошел
+            if (timeSinceUpdate > 2) {
+                pointColor = '#ffff00'; // Желтый - внутри комнаты
+            }
+            if (timeSinceUpdate > 5) {
+                pointColor = '#ff0000'; // Красный - покидает или пропал
+            }
+            
+            // Рисуем точку
+            ctx.fillStyle = pointColor;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Обводка точки
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // ID человека
+            ctx.fillStyle = '#00ff00';
+            ctx.font = 'bold 12px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText(pos.id, pos.x, pos.y - 15);
+            
+            // Расстояние (если включено)
+            if (showDistances && pos.distance_m !== null) {
+                ctx.fillStyle = '#00aa00';
+                ctx.font = '10px Courier New';
+                ctx.fillText(`${pos.distance_m.toFixed(1)}m`, pos.x, pos.y + 25);
+            }
+            
+            // Подсветка выбранного человека
+            if (selectedPerson === pos.id) {
+                ctx.strokeStyle = '#ffff00';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 15, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        });
+    });
+    
+    // Восстанавливаем состояние
+    ctx.restore();
+}
+
+// Обработка клика на карте
+function handleCanvasClick(event) {
+    const canvas = document.getElementById('room-map');
+    const rect = canvas.getBoundingClientRect();
+    const x = (event.clientX - rect.left - mapOffsetX) / mapScale;
+    const y = (event.clientY - rect.top - mapOffsetY) / mapScale;
+    
+    // Проверяем, кликнули ли на точку человека
+    let clickedPerson = null;
+    Object.keys(peoplePositions).forEach(roomName => {
+        const positions = peoplePositions[roomName];
+        positions.forEach(pos => {
+            const distance = Math.sqrt((x - pos.x)**2 + (y - pos.y)**2);
+            if (distance < 15) {
+                clickedPerson = pos;
+            }
+        });
+    });
+    
+    if (clickedPerson) {
+        selectedPerson = clickedPerson.id;
+        showPersonInfo(clickedPerson);
+        drawMap();
+    } else {
+        selectedPerson = null;
+        document.getElementById('person-details').textContent = 'CLICK ON A POINT';
+    }
+}
+
+// Показ информации о человеке
+function showPersonInfo(person) {
+    const details = document.getElementById('person-details');
+    const trajectory = personTrajectories[person.id] || [];
+    const timeInRoom = trajectory.length > 0 ? 
+        ((Date.now() / 1000) - trajectory[0].timestamp).toFixed(0) : 0;
+    
+    details.innerHTML = `
+        <div><strong>ID:</strong> ${person.id}</div>
+        <div><strong>POSITION:</strong> (${person.x.toFixed(1)}, ${person.y.toFixed(1)})</div>
+        ${person.distance_m ? `<div><strong>DISTANCE:</strong> ${person.distance_m.toFixed(2)}m</div>` : ''}
+        <div><strong>TIME IN ROOM:</strong> ${timeInRoom}s</div>
+        <div><strong>TRAJECTORY POINTS:</strong> ${trajectory.length}</div>
+    `;
+}
+
+// Управление картой
+function toggleTrajectories() {
+    showTrajectories = !showTrajectories;
+    drawMap();
+}
+
+function clearTrajectories() {
+    personTrajectories = {};
+    drawMap();
+}
+
+function resetZoom() {
+    mapScale = 1.0;
+    mapOffsetX = 0;
+    mapOffsetY = 0;
+    drawMap();
+}
+
+// Обработка мыши для перемещения и масштабирования
+function handleMouseDown(event) {
+    isDragging = true;
+    lastMouseX = event.clientX;
+    lastMouseY = event.clientY;
+}
+
+function handleMouseMove(event) {
+    if (isDragging) {
+        mapOffsetX += event.clientX - lastMouseX;
+        mapOffsetY += event.clientY - lastMouseY;
+        lastMouseX = event.clientX;
+        lastMouseY = event.clientY;
+        drawMap();
+    }
+}
+
+function handleMouseUp(event) {
+    isDragging = false;
+}
+
+function handleWheel(event) {
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? 0.9 : 1.1;
+    mapScale *= delta;
+    mapScale = Math.max(0.5, Math.min(3.0, mapScale)); // Ограничиваем масштаб
+    drawMap();
+}
+
+// Обновление легенды
+function updateLegend() {
+    if (!mapConfig) return;
+    
+    const legend = document.getElementById('map-legend');
+    let html = '';
+    
+    html += '<div class="legend-item"><div class="legend-color" style="background: #00ff00;"></div><div class="legend-info"><div class="legend-name">NEW ENTRY</div></div></div>';
+    html += '<div class="legend-item"><div class="legend-color" style="background: #ffff00;"></div><div class="legend-info"><div class="legend-name">IN ROOM</div></div></div>';
+    html += '<div class="legend-item"><div class="legend-color" style="background: #ff0000;"></div><div class="legend-info"><div class="legend-name">LEAVING</div></div></div>';
+    
+    mapConfig.rooms.forEach(room => {
+        // Показываем только выбранную комнату в легенде, если выбрана конкретная
+        if (selectedRoom !== 'all' && room.name !== selectedRoom) {
+            return;
+        }
+        
+        const roomData = roomStatus[room.name] || {count: 0, persons: []};
+        const isSelected = (selectedRoom === 'all' || room.name === selectedRoom);
+        html += `
+            <div class="legend-item ${isSelected ? 'legend-selected' : ''}">
+                <div class="legend-color" style="background: ${room.color || '#00ff00'};"></div>
+                <div class="legend-info">
+                    <div class="legend-name">${room.name}${isSelected && selectedRoom !== 'all' ? ' [ACTIVE]' : ''}</div>
+                    <div class="legend-details">
+                        SUBJECTS: <span class="value">${roomData.count}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    legend.innerHTML = html;
+}
+
+// Обновление чекбокса расстояний
+document.getElementById('show-distances').addEventListener('change', function() {
+    showDistances = this.checked;
+    drawMap();
+});
+
+// Автоматическое обновление
+setInterval(updateRoomStatus, 2000);
+setInterval(updatePositions, 500); // Обновляем позиции каждые 0.5 секунды
+setInterval(loadTrajectories, 2000);
+
+// Инициализация селектора комнат при загрузке
+updateRoomStatus();
+</script>
+{% endblock %}

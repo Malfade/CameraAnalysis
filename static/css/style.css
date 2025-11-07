@@ -1,0 +1,1179 @@
+/* ============================================
+   ОСНОВНЫЕ СТИЛИ
+   ============================================ */
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-attachment: fixed;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    padding-bottom: 40px;
+}
+
+.content-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+body.video-page {
+    background: #0a0a0a;
+    padding-bottom: 0;
+    overflow-x: hidden;
+}
+
+body.video-page .content-wrapper {
+    max-width: 100%;
+    padding: 0;
+}
+
+body.video-page #main-navbar,
+body.security-page #main-navbar {
+    display: none;
+}
+
+body.security-page {
+    background: #0a0a0a;
+    padding-bottom: 0;
+    overflow-x: hidden;
+}
+
+body.security-page .content-wrapper {
+    max-width: 100%;
+    padding: 0;
+}
+
+/* Навбар с градиентом */
+.navbar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    padding: 1rem 0;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.3rem;
+    letter-spacing: 0.5px;
+}
+
+.nav-link {
+    font-weight: 500;
+    transition: all 0.3s ease;
+    padding: 0.5rem 1rem !important;
+    border-radius: 5px;
+    margin: 0 0.25rem;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Контейнер с полупрозрачным фоном */
+.container {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 30px;
+    margin-top: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+/* ============================================
+   КАРТОЧКИ КОМНАТ
+   ============================================ */
+.room-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.room-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.room-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.room-card h3 {
+    margin-top: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.room-card h3::before {
+    content: '🏠';
+    font-size: 1.8rem;
+}
+
+.room-card .person-count {
+    font-size: 3rem;
+    font-weight: 800;
+    margin: 15px 0;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.room-card .person-count-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+.room-card .person-list {
+    font-size: 0.95rem;
+    opacity: 0.95;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.person-badge {
+    display: inline-block;
+    background-color: rgba(255, 255, 255, 0.25);
+    padding: 6px 12px;
+    border-radius: 20px;
+    margin: 4px;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s ease;
+}
+
+.person-badge:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+}
+
+/* Время пребывания */
+.visit-time {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.visit-time::before {
+    content: '⏱️';
+    font-size: 1rem;
+}
+
+/* ============================================
+   СТАТИСТИКА
+   ============================================ */
+.stats-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    border-left: 4px solid #667eea;
+}
+
+.stats-card:hover {
+    transform: translateX(5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+.stats-card h4 {
+    color: #667eea;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+
+.stats-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.stats-card .stat-value-small {
+    font-size: 1.2rem;
+}
+
+.stats-card .stat-label {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* ============================================
+   ТАБЛИЦА ПЕРЕМЕЩЕНИЙ
+   ============================================ */
+.table-responsive {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+.table {
+    background-color: white;
+    margin-bottom: 0;
+}
+
+.table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.table thead th {
+    border: none;
+    padding: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.01);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.table tbody td {
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+
+/* Бейджи для ID */
+.person-id-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* ============================================
+   ВРЕМЯ ОБНОВЛЕНИЯ
+   ============================================ */
+.update-info {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+#last-update {
+    font-size: 1rem;
+    color: #667eea;
+    font-weight: 600;
+    margin: 0;
+}
+
+.update-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: #28a745;
+    border-radius: 50%;
+    margin-right: 8px;
+    animation: blink 2s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* ============================================
+   ЗАГРУЗКА
+   ============================================ */
+.spinner-border {
+    margin: 40px auto;
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3rem;
+    color: #667eea;
+}
+
+/* ============================================
+   SECURITY MONITOR STYLE (SCP Foundation)
+   ============================================ */
+.security-monitor {
+    background: #0a0a0a;
+    min-height: 100vh;
+    padding: 10px;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Навигация */
+.monitor-nav {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid #00ff00;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 15px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #00aa00;
+    color: #00aa00;
+    text-decoration: none;
+    font-size: 0.75rem;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 3px #00aa00;
+    transition: all 0.3s ease;
+    letter-spacing: 1px;
+}
+
+.nav-link:hover {
+    background: rgba(0, 255, 0, 0.1);
+    border-color: #00ff00;
+    color: #00ff00;
+    text-shadow: 0 0 5px #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+.nav-link.active {
+    background: rgba(0, 255, 0, 0.2);
+    border-color: #00ff00;
+    color: #00ff00;
+    text-shadow: 0 0 8px #00ff00;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+}
+
+.nav-icon {
+    font-size: 1rem;
+}
+
+.nav-text {
+    font-weight: bold;
+}
+
+/* Эффект сканирования (как в старых мониторах) */
+.security-monitor::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        transparent 50%,
+        rgba(0, 255, 0, 0.03) 50%
+    );
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 1000;
+    animation: scan 8s linear infinite;
+}
+
+@keyframes scan {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(4px);
+    }
+}
+
+.monitor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: #000;
+    border: 2px solid #00ff00;
+    margin-bottom: 10px;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.4), inset 0 0 10px rgba(0, 255, 0, 0.1);
+}
+
+.header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.monitor-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    letter-spacing: 4px;
+    text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+    color: #00ff00;
+}
+
+.monitor-subtitle {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: #00aa00;
+    text-shadow: 0 0 5px #00aa00;
+}
+
+.header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+}
+
+.monitor-time {
+    font-size: 1rem;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 5px #00ff00;
+    font-weight: bold;
+}
+
+.monitor-date {
+    font-size: 0.75rem;
+    color: #00aa00;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 3px #00aa00;
+}
+
+.system-status {
+    display: flex;
+    gap: 20px;
+    padding: 8px 15px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #00ff00;
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.status-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.status-label {
+    color: #00aa00;
+    text-shadow: 0 0 3px #00aa00;
+}
+
+.status-value {
+    color: #00ff00;
+    font-weight: bold;
+    text-shadow: 0 0 5px #00ff00;
+}
+
+.status-value.online {
+    color: #00ff00;
+    animation: pulse-text 2s infinite;
+}
+
+@keyframes pulse-text {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.camera-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 15px;
+    max-width: 100%;
+}
+
+.camera-feed {
+    position: relative;
+}
+
+.camera-frame {
+    background: #000;
+    border: 2px solid #00ff00;
+    box-shadow: 0 0 25px rgba(0, 255, 0, 0.6), inset 0 0 25px rgba(0, 255, 0, 0.1);
+    position: relative;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+}
+
+.camera-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.8);
+    border-bottom: 1px solid #00ff00;
+}
+
+.camera-info {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.camera-label {
+    color: #00ff00;
+    font-size: 0.9rem;
+    font-weight: bold;
+    text-shadow: 0 0 5px #00ff00;
+    letter-spacing: 1px;
+}
+
+.camera-id {
+    color: #00aa00;
+    font-size: 0.75rem;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 3px #00aa00;
+    padding: 2px 6px;
+    border: 1px solid #00aa00;
+}
+
+.camera-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    font-family: 'Courier New', monospace;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    animation: blink 1.5s infinite;
+}
+
+.status-dot.online {
+    background: #00ff00;
+    box-shadow: 0 0 8px #00ff00, 0 0 15px #00ff00;
+}
+
+.status-dot.offline {
+    background: #ff0000;
+    box-shadow: 0 0 8px #ff0000, 0 0 15px #ff0000;
+}
+
+.status-text {
+    color: #00ff00;
+    text-shadow: 0 0 5px currentColor;
+    font-weight: bold;
+}
+
+.camera-view {
+    position: relative;
+    width: 100%;
+    min-height: 300px;
+    max-height: 70vh; /* Увеличиваем максимальную высоту */
+    background: #000;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.camera-image {
+    position: relative;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain; /* Показываем видео полностью без обрезки */
+    filter: grayscale(100%) contrast(1.3) brightness(0.85);
+    image-rendering: auto;
+}
+
+/* Эффект статики на видео */
+.video-static {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0, 255, 0, 0.02) 2px,
+            rgba(0, 255, 0, 0.02) 4px
+        );
+    pointer-events: none;
+    z-index: 2;
+    animation: static-noise 0.1s infinite;
+}
+
+@keyframes static-noise {
+    0% {
+        opacity: 0.5;
+    }
+    50% {
+        opacity: 0.8;
+    }
+    100% {
+        opacity: 0.5;
+    }
+}
+
+.camera-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.overlay-top {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+}
+
+.overlay-bottom {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+}
+
+.overlay-item {
+    background: rgba(0, 0, 0, 0.8);
+    color: #00ff00;
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    font-family: 'Courier New', monospace;
+    border: 1px solid #00ff00;
+    text-shadow: 0 0 5px #00ff00;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.overlay-label {
+    color: #00aa00;
+    text-shadow: 0 0 3px #00aa00;
+}
+
+.overlay-value {
+    color: #00ff00;
+    font-weight: bold;
+    text-shadow: 0 0 5px #00ff00;
+}
+
+.people-count {
+    color: #ffff00 !important;
+    text-shadow: 0 0 8px #ffff00 !important;
+}
+
+/* Угловые маркеры (как в security cameras) */
+.corner-markers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #00ff00;
+    box-shadow: 0 0 5px #00ff00;
+}
+
+.corner.top-left {
+    top: 5px;
+    left: 5px;
+    border-right: none;
+    border-bottom: none;
+}
+
+.corner.top-right {
+    top: 5px;
+    right: 5px;
+    border-left: none;
+    border-bottom: none;
+}
+
+.corner.bottom-left {
+    bottom: 5px;
+    left: 5px;
+    border-right: none;
+    border-top: none;
+}
+
+.corner.bottom-right {
+    bottom: 5px;
+    right: 5px;
+    border-left: none;
+    border-top: none;
+}
+
+.camera-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.8);
+    border-top: 1px solid #00ff00;
+    font-size: 0.7rem;
+}
+
+.footer-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #00aa00;
+    font-family: 'Courier New', monospace;
+}
+
+.footer-icon {
+    font-size: 0.8rem;
+}
+
+.footer-text {
+    text-shadow: 0 0 3px currentColor;
+}
+
+.footer-text.signal-ok {
+    color: #00ff00;
+}
+
+.footer-text.signal-error {
+    color: #ff0000;
+    animation: flicker 0.5s infinite;
+}
+
+.no-signal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 10;
+}
+
+.no-signal-text {
+    color: #ff0000;
+    font-size: 2rem;
+    font-weight: bold;
+    text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 8px;
+    animation: flicker 0.3s infinite;
+    margin-bottom: 10px;
+}
+
+.no-signal-subtext {
+    color: #aa0000;
+    font-size: 0.9rem;
+    text-shadow: 0 0 10px #aa0000;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 3px;
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+@keyframes flicker {
+    0%, 100% {
+        opacity: 1;
+    }
+    25% {
+        opacity: 0.8;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    75% {
+        opacity: 0.8;
+    }
+}
+
+/* Адаптивность для security monitor */
+@media (max-width: 768px) {
+    .camera-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .monitor-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .header-right {
+        align-items: center;
+    }
+
+    .system-status {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+/* ============================================
+   АКТИВНЫЕ ПОСЕЩЕНИЯ
+   ============================================ */
+.visit-card {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-left: 4px solid #28a745;
+    transition: all 0.2s ease;
+}
+
+.visit-card:hover {
+    transform: translateX(5px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+}
+
+.visit-card .person-id {
+    font-weight: 700;
+    color: #667eea;
+    font-size: 1.1rem;
+}
+
+.visit-card .visit-duration {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+/* ============================================
+   КНОПКИ И ДЕЙСТВИЯ
+   ============================================ */
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 25px;
+    padding: 10px 25px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* ============================================
+   ЗАГОЛОВКИ
+   ============================================ */
+h2 {
+    color: #333;
+    font-weight: 700;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 3px solid #667eea;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+h2::before {
+    content: '';
+    width: 4px;
+    height: 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
+}
+
+/* ============================================
+   ФОРМЫ
+   ============================================ */
+.form-select {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px 15px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* ============================================
+   АДАПТИВНОСТЬ
+   ============================================ */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+        margin-top: 15px;
+    }
+    
+    .room-card .person-count {
+        font-size: 2rem;
+    }
+    
+    .stats-card .stat-value {
+        font-size: 1.5rem;
+    }
+}
+
+/* ============================================
+   ПУСТОЕ СОСТОЯНИЕ
+   ============================================ */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+.empty-state::before {
+    content: '📭';
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 20px;
+}
+
+/* ============================================
+   АНИМАЦИИ
+   ============================================ */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.room-card,
+.stats-card,
+.visit-card {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* ============================================
+   СКРОЛЛБАР
+   ============================================ */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+/* Map Controls */
+.map-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.control-label {
+    color: #00aa00;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.control-label input[type="checkbox"] {
+    accent-color: #00ff00;
+}
+
+.map-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.selected-person-info {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid #00ff00;
+    padding: 15px;
+    font-family: 'Courier New', monospace;
+}
+
+.info-title {
+    color: #00ff00;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    text-shadow: 0 0 5px #00ff00;
+}
+
+.info-content {
+    color: #00aa00;
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+.info-content strong {
+    color: #00ff00;
+}
+
+.security-canvas {
+    cursor: crosshair;
+}
+
+/* Camera Controls */
+.camera-controls {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    border-top: 1px solid #00ff00;
+    justify-content: center;
+    align-items: center;
+}
+
+.control-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 15px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #00aa00;
+    color: #00aa00;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 3px #00aa00;
+    letter-spacing: 1px;
+}
+
+.control-btn:hover {
+    background: rgba(0, 255, 0, 0.1);
+    border-color: #00ff00;
+    color: #00ff00;
+    text-shadow: 0 0 5px #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+.control-btn .btn-icon {
+    font-size: 1rem;
+}
+
+.control-btn .btn-text {
+    font-weight: bold;
+}
+
+/* Map Room Selector */
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.security-select {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid #00aa00;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.security-select:hover {
+    border-color: #00ff00;
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+}
+
+.security-select:focus {
+    outline: none;
+    border-color: #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+.security-select option {
+    background: #0a0a0a;
+    color: #00ff00;
+}
+
+.legend-selected {
+    border: 2px solid #00ff00 !important;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    background: rgba(0, 255, 0, 0.1) !important;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}

@@ -1,0 +1,412 @@
+{% extends "layout.html" %}
+
+{% block title %}Видео - Система подсчета людей{% endblock %}
+
+{% block body_class %}video-page{% endblock %}
+
+{% block content %}
+<div class="security-monitor">
+    <!-- Навигация -->
+    <div class="monitor-nav">
+        <a href="/" class="nav-link">
+            <span class="nav-icon">📊</span>
+            <span class="nav-text">DASHBOARD</span>
+        </a>
+        <a href="/video" class="nav-link active">
+            <span class="nav-icon">📹</span>
+            <span class="nav-text">VIDEO</span>
+        </a>
+        <a href="/statistics" class="nav-link">
+            <span class="nav-icon">📈</span>
+            <span class="nav-text">STATISTICS</span>
+        </a>
+        <a href="/map" class="nav-link">
+            <span class="nav-icon">🗺️</span>
+            <span class="nav-text">MAP</span>
+        </a>
+    </div>
+
+    <!-- Заголовок системы -->
+    <div class="monitor-header">
+        <div class="header-left">
+            <div class="monitor-title">SECURITY MONITORING SYSTEM</div>
+            <div class="monitor-subtitle">FACILITY SURVEILLANCE</div>
+        </div>
+        <div class="header-right">
+            <div class="monitor-time" id="monitor-time"></div>
+            <div class="monitor-date" id="monitor-date"></div>
+        </div>
+    </div>
+
+    <!-- Статус системы -->
+    <div class="system-status">
+        <div class="status-item">
+            <span class="status-label">SYSTEM:</span>
+            <span class="status-value online">OPERATIONAL</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">CAMERAS:</span>
+            <span class="status-value" id="total-cameras">{{ rooms|length }}</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">SUBJECTS:</span>
+            <span class="status-value" id="total-subjects">0</span>
+        </div>
+    </div>
+
+    <!-- Сетка камер -->
+    <div class="camera-grid" id="video-container">
+        {% for room in rooms %}
+        <div class="camera-feed" data-room="{{ room }}">
+            <div class="camera-frame">
+                <!-- Верхняя панель камеры -->
+                <div class="camera-header">
+                    <div class="camera-info">
+                        <span class="camera-label">{{ room }}</span>
+                        <span class="camera-id">CAM-{{ "%02d"|format(loop.index) }}</span>
+                    </div>
+                    <div class="camera-status" id="status-{{ room }}">
+                        <span class="status-dot"></span>
+                        <span class="status-text">INIT</span>
+                    </div>
+                </div>
+
+                <!-- Видео область -->
+                <div class="camera-view">
+                    <div class="video-container">
+                        <img src="{{ url_for('video_feed', room_name=room) }}" 
+                             class="camera-image" 
+                             id="video-{{ room }}"
+                             alt="{{ room }}"
+                             onerror="handleVideoError('{{ room }}')">
+                    </div>
+                    <div class="video-static"></div>
+
+                    <!-- Оверлеи на видео -->
+                    <div class="camera-overlay">
+                        <!-- Верхний оверлей -->
+                        <div class="overlay-top">
+                            <div class="overlay-item">
+                                <span class="overlay-label">TIME:</span>
+                                <span class="overlay-value timestamp" id="time-{{ room }}">--:--:--</span>
+                            </div>
+                            <div class="overlay-item">
+                                <span class="overlay-label">FPS:</span>
+                                <span class="overlay-value" id="fps-{{ room }}">--</span>
+                            </div>
+                        </div>
+
+                        <!-- Нижний оверлей -->
+                        <div class="overlay-bottom">
+                            <div class="overlay-item">
+                                <span class="overlay-label">SUBJECTS:</span>
+                                <span class="overlay-value people-count" id="count-{{ room }}">0</span>
+                            </div>
+                            <div class="overlay-item">
+                                <span class="overlay-label">RES:</span>
+                                <span class="overlay-value" id="res-{{ room }}">--x--</span>
+                            </div>
+                        </div>
+
+                        <!-- Угловые маркеры (как в security cameras) -->
+                        <div class="corner-markers">
+                            <div class="corner top-left"></div>
+                            <div class="corner top-right"></div>
+                            <div class="corner bottom-left"></div>
+                            <div class="corner bottom-right"></div>
+                        </div>
+                    </div>
+                </div>
+
+                            <!-- Нижняя панель -->
+                            <div class="camera-footer">
+                                <div class="footer-item">
+                                    <span class="footer-icon">📡</span>
+                                    <span class="footer-text" id="signal-{{ room }}">SIGNAL OK</span>
+                                </div>
+                                <div class="footer-item">
+                                    <span class="footer-icon" id="rec-icon-{{ room }}">⏺️</span>
+                                    <span class="footer-text" id="rec-status-{{ room }}">STANDBY</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Панель управления -->
+                            <div class="camera-controls">
+                                <button type="button" class="control-btn" onclick="takeScreenshot('{{ room }}')" title="Сделать скриншот">
+                                    <span class="btn-icon">📷</span>
+                                    <span class="btn-text">SCREENSHOT</span>
+                                </button>
+                                <button type="button" class="control-btn" id="rec-btn-{{ room }}" onclick="toggleRecording('{{ room }}')" title="Начать/остановить запись">
+                                    <span class="btn-icon">⏺️</span>
+                                    <span class="btn-text" id="rec-btn-text-{{ room }}">START REC</span>
+                                </button>
+                            </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if not rooms %}
+        <div class="camera-feed">
+            <div class="camera-frame">
+                <div class="camera-header">
+                    <div class="camera-info">
+                        <span class="camera-label">NO FEED</span>
+                        <span class="camera-id">CAM-00</span>
+                    </div>
+                </div>
+                <div class="camera-view">
+                    <div class="no-signal">
+                        <div class="no-signal-text">NO SIGNAL</div>
+                        <div class="no-signal-subtext">CAMERA OFFLINE</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Обновление времени
+function updateTime() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('ru-RU', {hour12: false});
+    const dateStr = now.toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }).replace(/\//g, '.');
+
+    document.getElementById('monitor-time').textContent = timeStr;
+    document.getElementById('monitor-date').textContent = dateStr;
+
+    // Обновляем время на каждой камере
+    document.querySelectorAll('.timestamp').forEach(el => {
+        el.textContent = timeStr;
+    });
+}
+
+// Обновление данных камер
+function updateCameraData() {
+    fetch('/api/rooms')
+        .then(response => response.json())
+        .then(data => {
+            let totalSubjects = 0;
+            Object.keys(data).forEach(roomName => {
+                const roomData = data[roomName];
+                const count = roomData.count || 0;
+                totalSubjects += count;
+
+                const countEl = document.getElementById(`count-${roomName}`);
+                if (countEl) {
+                    countEl.textContent = count;
+                }
+            });
+
+            document.getElementById('total-subjects').textContent = totalSubjects;
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+// Обновление статуса камер
+function updateCameraStatus() {
+    fetch('/api/camera_status')
+        .then(response => response.json())
+        .then(data => {
+            Object.values(data).forEach(status => {
+                const statusEl = document.getElementById(`status-${status.room_name}`);
+                const fpsEl = document.getElementById(`fps-${status.room_name}`);
+                const resEl = document.getElementById(`res-${status.room_name}`);
+                const signalEl = document.getElementById(`signal-${status.room_name}`);
+
+                if (statusEl) {
+                    const dot = statusEl.querySelector('.status-dot');
+                    const text = statusEl.querySelector('.status-text');
+                    if (status.status === 'active') {
+                        dot.classList.add('online');
+                        dot.classList.remove('offline');
+                        text.textContent = 'ONLINE';
+                    } else {
+                        dot.classList.add('offline');
+                        dot.classList.remove('online');
+                        text.textContent = 'OFFLINE';
+                    }
+                }
+
+                if (fpsEl) {
+                    fpsEl.textContent = status.fps ? status.fps.toFixed(1) : '--';
+                }
+
+                if (resEl) {
+                    resEl.textContent = `${status.frame_width || '--'}x${status.frame_height || '--'}`;
+                }
+
+                if (signalEl) {
+                    signalEl.textContent = status.status === 'active' ? 'SIGNAL OK' : 'NO SIGNAL';
+                    signalEl.className = 'footer-text ' + (status.status === 'active' ? 'signal-ok' : 'signal-error');
+                }
+            });
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+// Обработка ошибок видео
+function handleVideoError(roomName) {
+    const videoEl = document.getElementById(`video-${roomName}`);
+    if (videoEl) {
+        videoEl.style.display = 'none';
+        const cameraView = videoEl.closest('.camera-view');
+        if (cameraView) {
+            const noSignal = document.createElement('div');
+            noSignal.className = 'no-signal';
+            noSignal.innerHTML = '<div class="no-signal-text">NO SIGNAL</div><div class="no-signal-subtext">CAMERA OFFLINE</div>';
+            cameraView.querySelector('.video-container').appendChild(noSignal);
+        }
+    }
+}
+
+            // Состояние записи для каждой камеры
+            const recordingStates = {};
+            
+            // Сделать скриншот
+            function takeScreenshot(roomName) {
+                fetch(`/api/screenshot/${roomName}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Показываем уведомление
+                            const btn = document.querySelector(`button[onclick*="takeScreenshot('${roomName}')"]`);
+                            if (btn) {
+                                const originalText = btn.querySelector('.btn-text').textContent;
+                                btn.querySelector('.btn-text').textContent = 'SAVED!';
+                                btn.style.background = 'rgba(0, 255, 0, 0.3)';
+                                setTimeout(() => {
+                                    btn.querySelector('.btn-text').textContent = originalText;
+                                    btn.style.background = '';
+                                }, 2000);
+                            }
+                            console.log('Скриншот сохранен:', data.url);
+                        } else {
+                            alert('Ошибка: ' + (data.error || 'Не удалось сохранить скриншот'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка при создании скриншота:', error);
+                        alert('Ошибка при создании скриншота');
+                    });
+            }
+            
+            // Переключить запись
+            function toggleRecording(roomName) {
+                const isRecording = recordingStates[roomName] || false;
+                
+                if (isRecording) {
+                    // Остановить запись
+                    fetch(`/api/recording/${roomName}/stop`, { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                recordingStates[roomName] = false;
+                                updateRecordingUI(roomName, false);
+                                console.log('Запись остановлена:', data.filename);
+                            } else {
+                                alert('Ошибка: ' + (data.error || 'Не удалось остановить запись'));
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Ошибка при остановке записи:', error);
+                            alert('Ошибка при остановке записи');
+                        });
+                } else {
+                    // Начать запись
+                    fetch(`/api/recording/${roomName}/start`, { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                recordingStates[roomName] = true;
+                                updateRecordingUI(roomName, true);
+                                console.log('Запись начата:', data.filename);
+                            } else {
+                                alert('Ошибка: ' + (data.error || 'Не удалось начать запись'));
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Ошибка при начале записи:', error);
+                            alert('Ошибка при начале записи');
+                        });
+                }
+            }
+            
+            // Обновить UI записи
+            function updateRecordingUI(roomName, isRecording) {
+                const recBtn = document.getElementById(`rec-btn-${roomName}`);
+                const recBtnText = document.getElementById(`rec-btn-text-${roomName}`);
+                const recStatus = document.getElementById(`rec-status-${roomName}`);
+                const recIcon = document.getElementById(`rec-icon-${roomName}`);
+                
+                if (isRecording) {
+                    if (recBtn) {
+                        recBtn.style.background = 'rgba(255, 0, 0, 0.3)';
+                        recBtn.style.borderColor = '#ff0000';
+                    }
+                    if (recBtnText) recBtnText.textContent = 'STOP REC';
+                    if (recStatus) {
+                        recStatus.textContent = 'RECORDING';
+                        recStatus.style.color = '#ff0000';
+                    }
+                    if (recIcon) {
+                        recIcon.textContent = '🔴';
+                        recIcon.style.animation = 'blink 1s infinite';
+                    }
+                } else {
+                    if (recBtn) {
+                        recBtn.style.background = '';
+                        recBtn.style.borderColor = '';
+                    }
+                    if (recBtnText) recBtnText.textContent = 'START REC';
+                    if (recStatus) {
+                        recStatus.textContent = 'STANDBY';
+                        recStatus.style.color = '#00aa00';
+                    }
+                    if (recIcon) {
+                        recIcon.textContent = '⏺️';
+                        recIcon.style.animation = '';
+                    }
+                }
+            }
+            
+            // Проверка статуса записи
+            function checkRecordingStatus(roomName) {
+                fetch(`/api/recording/${roomName}/status`)
+                    .then(response => response.json())
+                    .then(data => {
+                        recordingStates[roomName] = data.is_recording;
+                        updateRecordingUI(roomName, data.is_recording);
+                    })
+                    .catch(error => console.error('Ошибка при проверке статуса записи:', error));
+            }
+            
+            // Инициализация
+            updateTime();
+            updateCameraData();
+            updateCameraStatus();
+            
+            // Проверяем статус записи для всех камер
+            {% for room in rooms %}
+            checkRecordingStatus('{{ room }}');
+            {% endfor %}
+            
+            setInterval(updateTime, 1000);
+            setInterval(updateCameraData, 2000);
+            setInterval(updateCameraStatus, 3000);
+            
+            // Периодически проверяем статус записи
+            setInterval(function() {
+                {% for room in rooms %}
+                checkRecordingStatus('{{ room }}');
+                {% endfor %}
+            }, 2000);
+            </script>
+{% endblock %}

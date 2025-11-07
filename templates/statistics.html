@@ -1,0 +1,404 @@
+{% extends "layout.html" %}
+
+{% block title %}Статистика - Система подсчета людей{% endblock %}
+
+{% block body_class %}security-page{% endblock %}
+
+{% block content %}
+<div class="security-monitor">
+    <!-- Навигация -->
+    <div class="monitor-nav">
+        <a href="/" class="nav-link">
+            <span class="nav-icon">📊</span>
+            <span class="nav-text">DASHBOARD</span>
+        </a>
+        <a href="/video" class="nav-link">
+            <span class="nav-icon">📹</span>
+            <span class="nav-text">VIDEO</span>
+        </a>
+        <a href="/statistics" class="nav-link active">
+            <span class="nav-icon">📈</span>
+            <span class="nav-text">STATISTICS</span>
+        </a>
+        <a href="/map" class="nav-link">
+            <span class="nav-icon">🗺️</span>
+            <span class="nav-text">MAP</span>
+        </a>
+    </div>
+
+    <!-- Заголовок системы -->
+    <div class="monitor-header">
+        <div class="header-left">
+            <div class="monitor-title">STATISTICS MODULE</div>
+            <div class="monitor-subtitle">ANALYTICS & METRICS</div>
+        </div>
+        <div class="header-right">
+            <div class="monitor-time" id="monitor-time"></div>
+            <div class="monitor-date" id="monitor-date"></div>
+        </div>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="security-section">
+        <div class="section-header">
+            <span class="section-title">FILTERS</span>
+        </div>
+        <div class="filters-grid">
+            <div class="filter-item">
+                <span class="filter-label">ROOM:</span>
+                <select id="room-select" class="security-select">
+                    <option value="">ALL ROOMS</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <span class="filter-label">PERIOD:</span>
+                <select id="period-select" class="security-select">
+                    <option value="24">LAST 24H</option>
+                    <option value="48">LAST 48H</option>
+                    <option value="168">LAST WEEK</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <button class="security-btn" onclick="loadStatistics()">REFRESH</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="security-section">
+        <div class="section-header">
+            <span class="section-title">ROOM STATISTICS</span>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">TOTAL VISITS</div>
+                <div class="stat-value-large" id="stat-total-visits">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">UNIQUE SUBJECTS</div>
+                <div class="stat-value-large" id="stat-unique-people">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">AVG DURATION</div>
+                <div class="stat-value-large" id="stat-avg-duration">-</div>
+                <div class="stat-unit">MIN</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Графики -->
+    <div class="security-section">
+        <div class="section-header">
+            <span class="section-title">ATTENDANCE CHART</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="statistics-chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Системная нагрузка -->
+    <div class="security-section">
+        <div class="section-header">
+            <span class="section-title">SYSTEM LOAD</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="load-chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Количество людей по времени -->
+    <div class="security-section">
+        <div class="section-header">
+            <span class="section-title">PEOPLE COUNT OVER TIME</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="people-chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Статус камер -->
+    <div class="security-section">
+        <div class="section-header">
+            <span class="section-title">CAMERA STATUS</span>
+        </div>
+        <div id="camera-status-list" class="camera-status-grid">
+            <div class="text-center security-loading">LOADING...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+let statisticsChart = null;
+let loadChart = null;
+let peopleChart = null;
+
+// Обновление времени
+function updateTime() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('ru-RU', {hour12: false});
+    const dateStr = now.toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }).replace(/\//g, '.');
+
+    document.getElementById('monitor-time').textContent = timeStr;
+    document.getElementById('monitor-date').textContent = dateStr;
+}
+updateTime();
+setInterval(updateTime, 1000);
+
+// Загрузка списка комнат
+fetch('/api/rooms')
+    .then(response => response.json())
+    .then(data => {
+        const select = document.getElementById('room-select');
+        Object.keys(data).forEach(room => {
+            const option = document.createElement('option');
+            option.value = room;
+            option.textContent = room;
+            select.appendChild(option);
+        });
+    });
+
+// Загрузка статистики
+function loadStatistics() {
+    const roomName = document.getElementById('room-select').value;
+    const hours = parseInt(document.getElementById('period-select').value);
+    
+    if (!roomName) {
+        return;
+    }
+    
+    fetch(`/api/statistics/${roomName}?hours=${hours}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('stat-total-visits').textContent = data.total_visits || 0;
+            document.getElementById('stat-unique-people').textContent = data.unique_people || 0;
+            document.getElementById('stat-avg-duration').textContent = data.avg_duration_min ? data.avg_duration_min.toFixed(1) : 0;
+        });
+}
+
+// Загрузка метрик производительности
+function loadPerformanceMetrics() {
+    fetch('/api/performance_metrics?hours=1&max_points=50')
+        .then(response => response.json())
+        .then(data => {
+            if (peopleChart && Object.keys(data).length > 0) {
+                const roomName = Object.keys(data)[0];
+                const history = data[roomName].people_count_history;
+                
+                // Ограничиваем количество точек
+                const limitedHistory = history.slice(-50);
+                
+                peopleChart.data.labels = limitedHistory.map(h => {
+                    const date = new Date(h.time * 1000);
+                    return date.toLocaleTimeString('ru-RU', {hour12: false});
+                });
+                peopleChart.data.datasets[0].data = limitedHistory.map(h => h.count);
+                peopleChart.update('none');
+            }
+        });
+}
+
+// Загрузка системной нагрузки
+function loadSystemLoad() {
+    fetch('/api/system_load')
+        .then(response => response.json())
+        .then(data => {
+            if (loadChart) {
+                const now = new Date().toLocaleTimeString('ru-RU', {hour12: false});
+                
+                // Добавляем новые данные
+                loadChart.data.labels.push(now);
+                loadChart.data.datasets[0].data.push(data.cpu_percent || 0);
+                loadChart.data.datasets[1].data.push(data.memory_percent || 0);
+                
+                // Ограничиваем количество точек (последние 50 точек)
+                const maxPoints = 50;
+                if (loadChart.data.labels.length > maxPoints) {
+                    loadChart.data.labels = loadChart.data.labels.slice(-maxPoints);
+                    loadChart.data.datasets[0].data = loadChart.data.datasets[0].data.slice(-maxPoints);
+                    loadChart.data.datasets[1].data = loadChart.data.datasets[1].data.slice(-maxPoints);
+                }
+                
+                // Обновляем график без анимации для плавности
+                loadChart.update('none');
+            }
+        });
+}
+
+// Загрузка статуса камер
+function loadCameraStatus() {
+    fetch('/api/camera_status')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('camera-status-list');
+            container.innerHTML = '';
+            
+            Object.values(data).forEach(status => {
+                const statusCard = document.createElement('div');
+                statusCard.className = 'camera-status-card';
+                const statusDot = status.status === 'active' ? 
+                    '<span class="status-dot online"></span>' : 
+                    '<span class="status-dot offline"></span>';
+                
+                statusCard.innerHTML = `
+                    <div class="camera-status-header">
+                        <span class="camera-status-name">${status.room_name}</span>
+                        ${statusDot}
+                    </div>
+                    <div class="camera-status-info">
+                        <div>FPS: <span class="value">${status.fps || 0}</span></div>
+                        <div>RES: <span class="value">${status.frame_width || 0}x${status.frame_height || 0}</span></div>
+                        ${status.error_count > 0 ? `<div class="error">ERRORS: ${status.error_count}</div>` : ''}
+                    </div>
+                `;
+                container.appendChild(statusCard);
+            });
+        });
+}
+
+// Инициализация графиков
+const ctx = document.getElementById('statistics-chart');
+if (ctx) {
+    statisticsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'ATTENDANCE',
+                data: [],
+                borderColor: '#00ff00',
+                backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: '#00ff00' }
+                }
+            },
+            scales: {
+                x: { ticks: { color: '#00ff00' }, grid: { color: 'rgba(0, 255, 0, 0.1)' } },
+                y: { ticks: { color: '#00ff00' }, grid: { color: 'rgba(0, 255, 0, 0.1)' } }
+            }
+        }
+    });
+}
+
+const loadCtx = document.getElementById('load-chart');
+if (loadCtx) {
+    loadChart = new Chart(loadCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'CPU %',
+                data: [],
+                borderColor: '#00ff00',
+                backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                tension: 0.4,
+                fill: true
+            }, {
+                label: 'MEMORY %',
+                data: [],
+                borderColor: '#ffff00',
+                backgroundColor: 'rgba(255, 255, 0, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 0 // Отключаем анимацию для плавности
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true, 
+                    max: 100, 
+                    min: 0,
+                    ticks: { color: '#00ff00', stepSize: 10 }, 
+                    grid: { color: 'rgba(0, 255, 0, 0.1)' } 
+                },
+                x: { 
+                    ticks: { color: '#00ff00', maxRotation: 45, minRotation: 0 }, 
+                    grid: { color: 'rgba(0, 255, 0, 0.1)' },
+                    maxTicksLimit: 20 // Ограничиваем количество меток на оси X
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: '#00ff00' }
+                },
+                tooltip: {
+                    enabled: true
+                }
+            }
+        }
+    });
+}
+
+const peopleCtx = document.getElementById('people-chart');
+if (peopleCtx) {
+    peopleChart = new Chart(peopleCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'PEOPLE COUNT',
+                data: [],
+                borderColor: '#00ff00',
+                backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 0
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true, 
+                    ticks: { color: '#00ff00', stepSize: 1 }, 
+                    grid: { color: 'rgba(0, 255, 0, 0.1)' } 
+                },
+                x: { 
+                    ticks: { color: '#00ff00', maxRotation: 45, minRotation: 0 }, 
+                    grid: { color: 'rgba(0, 255, 0, 0.1)' },
+                    maxTicksLimit: 20
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: '#00ff00' }
+                },
+                tooltip: {
+                    enabled: true
+                }
+            }
+        }
+    });
+}
+
+// Автоматическое обновление
+setInterval(loadPerformanceMetrics, 2000);
+setInterval(loadSystemLoad, 2000);
+setInterval(loadCameraStatus, 3000);
+
+loadPerformanceMetrics();
+loadSystemLoad();
+loadCameraStatus();
+</script>
+{% endblock %}

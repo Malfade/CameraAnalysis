@@ -1,0 +1,37 @@
+{
+  "rooms": [
+    {
+      "name": "Room1",
+      "x": 50,
+      "y": 50,
+      "width": 200,
+      "height": 150,
+      "color": "#667eea",
+      "width_meters": 5.0,
+      "height_meters": 4.0
+    },
+    {
+      "name": "Room2",
+      "x": 300,
+      "y": 50,
+      "width": 200,
+      "height": 150,
+      "color": "#764ba2",
+      "width_meters": 5.0,
+      "height_meters": 4.0
+    },
+    {
+      "name": "Room3",
+      "x": 175,
+      "y": 250,
+      "width": 200,
+      "height": 150,
+      "color": "#f093fb",
+      "width_meters": 5.0,
+      "height_meters": 4.0
+    }
+  ],
+  "canvas_width": 800,
+  "canvas_height": 600,
+  "background_color": "#0a0a0a"
+}
